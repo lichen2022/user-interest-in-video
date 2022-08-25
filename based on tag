@@ -1,0 +1,27 @@
+df_train=pd.concat([pd.read_pickle('../output/train_userid.pkl'),pd.read_pickle('../output/train_videoid.pkl'),pd.read_pickle('../output/train_is_like.pkl'),pd.read_pickle('../output/train_is_favourite.pkl')], axis=1)
+df_train=df_train.drop_duplicates()
+train_data1=pd.DataFrame()
+for iid in df_train['userid'].drop_duplicates():
+    train_iid=df_train[df_train['userid']==iid].head(10) #每个用户取前10条视频数据
+    train_data1=pd.concat([train_data1,train_iid])
+train_data1.to_pickle('../output/train_data1.pkl')
+
+df_train = pd.read_pickle('../output/df_train.pkl')
+df_tag=pd.DataFrame()
+for iid in df_train['userid'].drop_duplicates():
+    train_iid=df_train[(df_train['userid']==iid) & (df_train['is_finish']==True)] #用户iid
+    df_fre=train_iid['tag'].value_counts()/len(train_iid) #统计各tag频率
+    df_fre.rename(iid,inplace=True)
+    df_fre=df_fre.to_frame()
+    df_tag=df_tag.join(df_fre,how='outer')
+df_tag.to_pickle('../output/df_tag.pkl')
+
+df_tag=pd.read_pickle('../output/df_tag.pkl') #
+df_test=pd.read_pickle('../output/df_test.pkl')
+ans_tag=pd.DataFrame(columns=['y_pred'])
+for i in range(len(df_test)):
+    user=df_test.at[i,'userid']
+    tag=df_test.at[i,'tag']
+    y_pred=df_tag.at[tag,user]
+    ans_tag=ans_tag.append(pd.DataFrame({'y_pred':[y_pred]}),ignore_index=True)
+ans_tag.to_csv('../output/ans_tag.csv')
